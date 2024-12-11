@@ -1,0 +1,11 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<h1>THỐNG KÊ THÔNG TIN SÀN GIAO DỊCH THƯƠNG MẠI ĐIỆN TỬ</h1>
+<h2>Thống kê số lượng sản phẩm theo danh mục</h2>
+<ul>
+    {% for s in stats %}
+    <li><strong>{{ s.name }}</strong>: {{ s.count }}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
