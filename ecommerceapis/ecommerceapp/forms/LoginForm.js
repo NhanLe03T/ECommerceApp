@@ -1,82 +1,51 @@
-// Form đăng nhập, bao gồm username và password
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, Text } from 'react-native';
-import { loginUser } from '../utils/api';  // API đăng nhập
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { loginUser } from '../../util/api'; // Import hàm gọi API đăng nhập
 
-const LoginForm = ({ navigation }) => {
-  const [username, setUsername] = useState('');  // State cho username
-  const [password, setPassword] = useState('');  // State cho mật khẩu
+const LoginForm = ({ onLogin }) => {
+  const [username, setUsername] = useState(''); // State lưu tên người dùng
+  const [password, setPassword] = useState(''); // State lưu mật khẩu
 
-  // Xử lý đăng nhập
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Lỗi', 'Hãy nhập đầy đủ thông tin!');  // Kiểm tra thông tin nhập
-      return;
-    }
-
-    try {
-      // Gọi API đăng nhập
-      const response = await loginUser(username, password);
-      if (response.status === 'success') {
-        Alert.alert('Login thành công!');
-        // Chuyển sang màn hình chính hoặc màn hình khác sau khi đăng nhập thành công
-      } else {
-        Alert.alert('Login thất bại!');  // Thông báo lỗi nếu đăng nhập thất bại
-      }
-    } catch (error) {
-      Alert.alert('Lỗi', 'Đã xảy ra lỗi, vui lòng thử lại!');  // Thông báo lỗi
+    const response = await loginUser(username, password); // Gọi API đăng nhập
+    if (response.status === 'success') {
+      Alert.alert('Đăng nhập thành công', `Chào mừng ${response.role}`);
+      onLogin(username, password); // Truyền dữ liệu lên màn hình cha
+    } else {
+      Alert.alert('Lỗi đăng nhập', response.message); 
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Đăng Nhập</Text> {/* Tiêu đề form */}
-      {/* Input cho username */}
       <TextInput
         style={styles.input}
+        placeholder="Tên người dùng"
         value={username}
         onChangeText={setUsername}
-        placeholder="Username"
-        placeholderTextColor="#aaa"
       />
-      {/* Input cho password */}
       <TextInput
         style={styles.input}
+        placeholder="Mật khẩu"
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor="#aaa"
-        secureTextEntry
       />
-      {/* Button đăng nhập */}
-      <Button title="Đăng Nhập" onPress={handleLogin} color="#007BFF" />
+      <Button title="Đăng nhập" onPress={handleLogin} />
     </View>
   );
 };
 
-// Style cho LoginForm
 const styles = StyleSheet.create({
   container: {
-    flex: 1,  // Dùng toàn màn hình
-    justifyContent: 'center',  // Canh giữa theo chiều dọc
-    alignItems: 'center',  // Canh giữa theo chiều ngang
-    padding: 20,
-    backgroundColor: '#f5f5f5',  // Màu nền
-  },
-  title: {
-    fontSize: 24,  // Kích thước chữ lớn
-    fontWeight: 'bold',
-    marginBottom: 20,  // Khoảng cách bên dưới tiêu đề
+    width: '100%',
   },
   input: {
-    width: '100%',
-    height: 40,  // Chiều cao của input
-    borderColor: '#ccc',  // Màu viền
-    borderWidth: 1,  // Độ dày viền
-    borderRadius: 5,  // Góc bo tròn
-    paddingHorizontal: 10,  // Khoảng cách bên trong
-    marginBottom: 15,  // Khoảng cách giữa các input
-    backgroundColor: '#fff',  // Màu nền input
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    marginBottom: 12,
+    borderRadius: 4,
   },
 });
 

@@ -1,108 +1,55 @@
-// Form đăng ký người dùng, bao gồm avatar, username, password và vai trò
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, Alert, StyleSheet, Picker } from 'react-native';
-import AvatarPicker from '../components/AvatarPicker';  // Component chọn avatar
-import { registerUser } from '../utils/api';  // API đăng ký người dùng
+import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import AvatarPicker from './AvatarPicker'; // Import component chọn avatar
+import { registerUser } from '../../util/api'; // Import hàm gọi API đăng ký
 
-const RegisterForm = () => {
-  const [username, setUsername] = useState('');  // State cho username
-  const [password, setPassword] = useState('');  // State cho mật khẩu
-  const [role, setRole] = useState('user');  // Vai trò mặc định là người dùng
-  const [avatar, setAvatar] = useState(null);  // Avatar người dùng
+const RegisterForm = ({ onRegister }) => {
+  const [username, setUsername] = useState(''); // State lưu tên người dùng
+  const [password, setPassword] = useState(''); // State lưu mật khẩu
+  const [avatar, setAvatar] = useState(null); // State lưu avatar
+  const [role, setRole] = useState('user'); // State lưu vai trò (user hoặc seller)
 
-  // Xử lý đăng ký người dùng
   const handleRegister = async () => {
-    if (!username || !password || !avatar) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin, bao gồm cả avatar!');  // Kiểm tra thông tin nhập
-      return;
-    }
-
-    try {
-      // Gọi API đăng ký người dùng
-      const response = await registerUser(username, password, avatar, role);
-      if (response.status === 'success') {
-        Alert.alert('Đăng ký thành công!');
-      } else {
-        Alert.alert('Đăng ký thất bại!');  // Thông báo lỗi khi đăng ký thất bại
-      }
-    } catch (error) {
-      Alert.alert('Lỗi', 'Đã xảy ra lỗi, vui lòng thử lại!');  // Thông báo lỗi
+    const response = await registerUser(username, password, avatar, role); // Gọi API đăng ký
+    if (response.status === 'success') {
+      Alert.alert('Đăng ký thành công', `Chào mừng ${response.username}`);
+      onRegister(response); // Truyền dữ liệu lên màn hình cha
+    } else {
+      Alert.alert('Lỗi đăng ký', response.message); 
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Đăng Ký</Text> {/* Tiêu đề form */}
-      {/* Input cho username */}
       <TextInput
         style={styles.input}
+        placeholder="Tên người dùng"
         value={username}
         onChangeText={setUsername}
-        placeholder="Username"
-        placeholderTextColor="#aaa"
       />
-      {/* Input cho password */}
       <TextInput
         style={styles.input}
+        placeholder="Mật khẩu"
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor="#aaa"
-        secureTextEntry
       />
-      {/* Component chọn avatar */}
-      <AvatarPicker avatar={avatar} setAvatar={setAvatar} />
-      <Text style={styles.label}>Vai Trò:</Text> {/* Nhãn cho picker */}
-      {/* Picker chọn vai trò */}
-      <Picker
-        selectedValue={role}
-        style={styles.picker}
-        onValueChange={(itemValue) => setRole(itemValue)}
-      >
-        <Picker.Item label="Người Dùng" value="user" />
-        <Picker.Item label="Người Bán" value="seller" />
-      </Picker>
-      {/* Button đăng ký */}
-      <Button title="Đăng Ký" onPress={handleRegister} color="#28a745" />
+      <AvatarPicker onAvatarSelected={setAvatar} />
+      <Button title="Đăng ký" onPress={handleRegister} />
     </View>
   );
 };
 
-// Style cho RegisterForm
 const styles = StyleSheet.create({
   container: {
-    flex: 1,  // Dùng toàn màn hình
-    justifyContent: 'center',  // Canh giữa theo chiều dọc
-    alignItems: 'center',  // Canh giữa theo chiều ngang
-    padding: 20,
-    backgroundColor: '#f5f5f5',  // Màu nền
-  },
-  title: {
-    fontSize: 24,  // Kích thước chữ lớn
-    fontWeight: 'bold',
-    marginBottom: 20,  // Khoảng cách bên dưới tiêu đề
+    width: '100%',
   },
   input: {
-    width: '100%',
-    height: 40,  // Chiều cao của input
-    borderColor: '#ccc',  // Màu viền
-    borderWidth: 1,  // Độ dày viền
-    borderRadius: 5,  // Góc bo tròn
-    paddingHorizontal: 10,  // Khoảng cách bên trong
-    marginBottom: 15,  // Khoảng cách giữa các input
-    backgroundColor: '#fff',  // Màu nền input
-  },
-  label: {
-    alignSelf: 'flex-start',  // Canh lề trái
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  picker: {
-    width: '100%',
-    height: 50,
-    borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 15,
+    borderColor: '#ccc',
+    padding: 8,
+    marginBottom: 12,
+    borderRadius: 4,
   },
 });
 
