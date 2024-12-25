@@ -1,4 +1,6 @@
 // api.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const registerUser = async (username, password, avatar, role) => {
   try {
     // Gọi API đăng ký người dùng
@@ -47,3 +49,23 @@ export const getProducts = async (page = 1, limit = 20, searchQuery = '') => {
   }
 };
 
+export const fetchUserProfile = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authToken'); // Lấy token từ AsyncStorage
+    const response = await fetch('https://backendurl.com/api/user/profile', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Không thể lấy thông tin người dùng!');
+    }
+
+    return await response.json(); // Trả về dữ liệu người dùng
+  } catch (error) {
+    console.error('Lỗi khi lấy thông tin người dùng:', error);
+    throw error;
+  }
+};
