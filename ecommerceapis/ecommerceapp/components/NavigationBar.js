@@ -1,19 +1,45 @@
-// NavigationBar.js
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native'; // Để điều hướng giữa các màn hình
 
-const NavigationBar = () => {
+const NavigationBar = ({ role }) => {
+  const navigation = useNavigation(); // Hook điều hướng từ React Navigation
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button}>
+      {/* Nút Hồ sơ */}
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => navigation.navigate('Profile')} // Điều hướng đến màn hình hồ sơ
+      >
         <Text style={styles.buttonText}>Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button}>
+
+      {/* Nút Thông báo */}
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => navigation.navigate('Notifications')} // Điều hướng đến màn hình thông báo
+      >
         <Text style={styles.buttonText}>Thông báo</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button}>
+
+      {/* Nút Lịch sử giao dịch */}
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => navigation.navigate('TransactionHistory')} // Điều hướng đến màn hình lịch sử giao dịch
+      >
         <Text style={styles.buttonText}>Lịch sử giao dịch</Text>
       </TouchableOpacity>
+
+      {/* Nút Cửa hàng, chỉ hiển thị khi người dùng có role là 'seller' */}
+      {role === 'seller' && (
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => navigation.navigate('Store')} // Điều hướng đến màn hình cửa hàng
+        >
+          <Text style={styles.buttonText}>Cửa hàng</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

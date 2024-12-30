@@ -1,104 +1,131 @@
-// MainScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, FlatList, Button, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { getProducts } from '../utils/api'; // API lấy sản phẩm
-import ProductCard from '../components/ProductCard'; // Card sản phẩm
-import NavigationBar from '../components/NavigationBar'; // Thanh điều hướng dưới
+import {
+  View,
+  TextInput,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Thư viện lưu trữ vai trò người dùng
+import { getProducts } from '../utils/api'; // Hàm gọi API để lấy danh sách sản phẩm
+import ProductCard from '../components/ProductCard'; // Component hiển thị sản phẩm
+import NavigationBar from '../components/NavigationBar'; // Component thanh điều hướng dưới
 
 const MainScreen = () => {
-  const [products, setProducts] = useState([]); // Danh sách sản phẩm
-  const [searchQuery, setSearchQuery] = useState(''); // Từ khóa tìm kiếm
-  const [page, setPage] = useState(1); // Trang hiện tại
-  const [loading, setLoading] = useState(false); // Trạng thái loading
-  const [hasMore, setHasMore] = useState(true); // Kiểm tra có còn sản phẩm để load không
-  const [totalProducts, setTotalProducts] = useState(0); // Tổng số sản phẩm
+  // State lưu trữ danh sách sản phẩm
+  const [products, setProducts] = useState([]);
+  // State lưu từ khóa tìm kiếm
+  const [searchQuery, setSearchQuery] = useState('');
+  // State lưu trang hiện tại (phục vụ phân trang)
+  const [page, setPage] = useState(1);
+  // State kiểm soát trạng thái đang tải dữ liệu
+  const [loading, setLoading] = useState(false);
+  // State kiểm soát xem còn sản phẩm để tải thêm hay không
+  const [hasMore, setHasMore] = useState(true);
+  // State lưu vai trò của người dùng (lấy từ AsyncStorage)
+  const [role, setRole] = useState(null);
 
-  // Hàm lấy sản phẩm từ API
+  // Hàm lấy vai trò người dùng từ bộ nhớ cục bộ
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData'); // Lấy dữ liệu từ AsyncStorage
+        const parsedData = JSON.parse(userData); // Parse dữ liệu JSON
+        setRole(parsedData?.role || 'user'); // Gán vai trò mặc định là user
+      } catch (error) {
+        console.error('Lỗi khi lấy thông tin người dùng:', error); 
+      }
+    };
+
+    fetchUserRole(); 
+  }, []);
+
+  // Hàm lấy danh sách sản phẩm từ API
   const fetchProducts = async (page = 1) => {
-    if (loading || !hasMore) return; // Nếu đang load hoặc không còn sản phẩm để load thì không gọi API
+    if (loading || !hasMore) return; // nếu đang load thì klgi
 
-    setLoading(true);
+    setLoading(true); // Bật trạng thái loading
     try {
-      const { products: newProducts, total } = await getProducts(page, 20, searchQuery);
+      const { products: newProducts, total } = await getProducts(page, 20, searchQuery); // Gọi API lấy sản phẩm
 
       if (newProducts.length < 20) {
-        setHasMore(false); // Nếu sản phẩm trả về ít hơn 20 thì không còn dữ liệu để tải nữa
+        setHasMore(false); // Nếu trả về ít hơn 20 sản phẩm, ngừng phân trang
       }
 
-      setTotalProducts(total); // Cập nhật tổng số sản phẩm
-      setProducts((prevProducts) => [...prevProducts, ...newProducts]); // Thêm sản phẩm mới vào danh sách hiện tại
+      setProducts((prevProducts) => [...prevProducts, ...newProducts]); // Thêm sản phẩm mới vào danh sách
     } catch (error) {
-      console.error(error);
+      console.error(error); // Log lỗi nếu xảy ra
     } finally {
-      setLoading(false);
+      setLoading(false); // Tắt trạng thái loading
     }
   };
 
-  // UseEffect để load dữ liệu ban đầu
+  // Gọi hàm fetchProducts khi component được mount hoặc khi trang/từ khóa thay đổi
   useEffect(() => {
-    fetchProducts(page);
+    fetchProducts(page); // Gọi hàm fetchProducts
   }, [page, searchQuery]);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (text) => {
-    setSearchQuery(text);
-    setPage(1); // Nếu tìm kiếm thì về trang 1
-    setHasMore(true); // Khi tìm kiếm lại thì có thể tải thêm
-    setProducts([]); // Reset lại danh sách sản phẩm
+    setSearchQuery(text); // Cập nhật từ khóa tìm kiếm
+    setPage(1); // Đặt lại trang về 1
+    setHasMore(true); // Cho phép tải thêm dữ liệu
+    setProducts([]); // Reset danh sách sản phẩm hiện tại
   };
 
-  // Hàm load thêm khi cuộn xuống
+  // Hàm xử lý khi cuộn đến cuối danh sách để tải thêm
   const loadMore = () => {
     if (!loading && hasMore) {
-      setPage(page + 1); // Tăng trang lên để load sản phẩm tiếp theo
+      setPage(page + 1); // Tăng số trang lên
     }
   };
 
-  // Render một sản phẩm trong danh sách
-  const renderProduct = ({ item }) => {
-    return <ProductCard product={item} />;
-  };
+  // Render từng sản phẩm trong danh sách
+  const renderProduct = ({ item }) => <ProductCard product={item} />;
 
   return (
     <View style={styles.container}>
-      {/* Thanh tìm kiếm */}
+      {/* Ô tìm kiếm sản phẩm */}
       <TextInput
         value={searchQuery}
-        onChangeText={handleSearch}
-        placeholder="Tìm sản phẩm..."
-        style={styles.searchInput}
+        onChangeText={handleSearch} // Gọi hàm khi nhập từ khóa
+        placeholder="Tìm sản phẩm..." // Văn bản gợi ý
+        style={styles.searchInput} // Áp dụng style
       />
 
       {/* Danh sách sản phẩm */}
       <FlatList
-        data={products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
-        onEndReached={loadMore} // Gọi loadMore khi người dùng cuộn đến cuối
-        onEndReachedThreshold={0.5} // Khi nào cuộn đến 50% cuối list thì load thêm
-        ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null} // Hiển thị loading indicator khi đang tải thêm
+        data={products} // Dữ liệu sản phẩm
+        renderItem={renderProduct} // Hàm render từng item
+        keyExtractor={(item) => item.id.toString()} // Khóa duy nhất cho mỗi item
+        onEndReached={loadMore} // Gọi loadMore khi cuộn đến cuối
+        onEndReachedThreshold={0.5} // Kích hoạt loadMore khi cuộn đến 50% cuối
+        ListFooterComponent={
+          loading ? <ActivityIndicator size="large" color="#0000ff" /> : null
+        } // Hiển thị loading indicator khi đang tải
       />
 
       {/* Thanh điều hướng dưới */}
-      <NavigationBar />
+      <NavigationBar role={role} /> {/* Truyền role để hiển thị nút phù hợp */}
     </View>
   );
 };
 
+// Style cho MainScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 20,
+    backgroundColor: '#f7f7f7', // Màu nền
+    paddingTop: 20, // Khoảng cách trên
   },
   searchInput: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    margin: 10,
-    paddingLeft: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
+    height: 40, // Chiều cao ô tìm kiếm
+    borderColor: '#ccc', // Màu viền
+    borderWidth: 1, // Độ dày viền
+    margin: 10, // Khoảng cách xung quanh
+    paddingLeft: 10, // Khoảng cách nội dung bên trái
+    borderRadius: 5, // Bo tròn góc
+    backgroundColor: '#fff', // Màu nền ô tìm kiếm
   },
 });
 
