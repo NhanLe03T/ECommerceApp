@@ -1,77 +1,57 @@
+// ProductCard.js - Component hiển thị sản phẩm
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
-// Hàm component ProductCard
-const ProductCard = ({ product }) => {
-  // Tính toán số sao (giới hạn tối đa là 5 sao)
-  const rating = product.rating || 0; // Nếu không có rating thì mặc định là 0 sao
-  const fullStars = Math.floor(rating); // Số sao đầy (số nguyên)
-  const emptyStars = 5 - fullStars; // Số sao rỗng (để đạt tổng cộng 5 sao)
-
+const ProductCard = ({ product, onPress }) => {
   return (
-    <View style={styles.card}>
-      <Image source={{ uri: product.image }} style={styles.image} /> {/* Hiển thị hình ảnh sản phẩm */}
+    // Thẻ sản phẩm có thể nhấn
+    <TouchableOpacity onPress={() => onPress(product)} style={styles.card}>
+      {/* Hình ảnh sản phẩm */}
+      <Image source={{ uri: product.image }} style={styles.image} />
       <View style={styles.info}>
-        <Text style={styles.productName}>{product.name}</Text> {/* Hiển thị tên sản phẩm */}
-        <Text style={styles.productPrice}>{product.price} VNĐ</Text> {/* Hiển thị giá sản phẩm */}
-        
-        {/* Hiển thị số sao đánh giá */}
-        <View style={styles.rating}>
-          {[...Array(fullStars)].map((_, index) => (
-            <Text key={index} style={styles.star}>★</Text> // Hiển thị sao đầy
-          ))}
-          {[...Array(emptyStars)].map((_, index) => (
-            <Text key={index + fullStars} style={styles.starEmpty}>★</Text> // Hiển thị sao rỗng
-          ))}
-        </View>
+        {/* Tên sản phẩm */}
+        <Text style={styles.productName}>{product.name}</Text>
+        {/* Giá sản phẩm */}
+        <Text style={styles.productPrice}>{product.price} VNĐ</Text>
+        {/* Số sao đánh giá */}
+        <Text style={styles.productRating}>⭐ {product.rating || 0}/5</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
-// Style cho ProductCard
+// Style cho thẻ sản phẩm
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    margin: 10,
-    padding: 10,
-    elevation: 3, // Hiệu ứng bóng cho card
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    backgroundColor: '#fff', // Màu nền thẻ
+    borderRadius: 10, // Bo góc
+    margin: 10, // Khoảng cách giữa các thẻ
+    padding: 10, // Khoảng cách bên trong
+    elevation: 3, // Bóng đổ
   },
   image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
+    width: '100%', // Chiều rộng full
+    height: 200, // Chiều cao hình
+    borderRadius: 10, // Bo góc cho hình
   },
   info: {
-    paddingTop: 10,
+    paddingTop: 10, // Khoảng cách phía trên thông tin
   },
   productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 18, // Kích thước font tên sản phẩm
+    fontWeight: 'bold', // In đậm tên sản phẩm
+    color: '#333', // Màu chữ
   },
   productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#e60000',
-    marginTop: 5,
+    fontSize: 16, // Kích thước font giá
+    fontWeight: 'bold', // In đậm giá
+    color: '#e60000', // Màu đỏ cho giá
+    marginTop: 5, // Khoảng cách phía trên giá
   },
-  rating: {
-    flexDirection: 'row', // Các sao sẽ nằm theo hàng ngang
-    marginTop: 5,
-  },
-  star: {
-    color: '#FFD700', // Màu vàng cho sao đầy
-    fontSize: 18,
-  },
-  starEmpty: {
-    color: '#ddd', // Màu xám cho sao rỗng
-    fontSize: 18,
+  productRating: {
+    fontSize: 14, // Kích thước font đánh giá
+    color: '#666', // Màu chữ xám
+    marginTop: 5, // Khoảng cách phía trên đánh giá
   },
 });
 
