@@ -1,10 +1,22 @@
 // ShopSellerScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  Button, 
+  FlatList, 
+  StyleSheet, 
+  ActivityIndicator, 
+  TouchableOpacity, 
+  Modal, 
+  TextInput as RNTextInput 
+} from 'react-native';
 import { getProducts } from '../utils/api'; // API lấy sản phẩm
 import ProductCard from '../components/ProductCard'; // Card sản phẩm
 import ShopForm from '../forms/ShopForm'; // Form nhập tên cửa hàng
 import NavigationBar from '../components/NavigationBar'; // Thanh điều hướng dưới
+import AvatarPicker from '../components/AvatarPicker'; // Component chọn hình ảnh
 
 const ShopSellerScreen = () => {
   const [storeName, setStoreName] = useState(''); // Tên cửa hàng
@@ -13,6 +25,10 @@ const ShopSellerScreen = () => {
   const [page, setPage] = useState(1); // Trang hiện tại
   const [hasMore, setHasMore] = useState(true); // Kiểm tra còn sản phẩm để load không
   const [searchQuery, setSearchQuery] = useState(''); // Từ khóa tìm kiếm
+  const [isAdding, setIsAdding] = useState(false); // Trạng thái thêm sản phẩm
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: '' }); // Thông tin sản phẩm mới
+  const [selectedProducts, setSelectedProducts] = useState([]); // Danh sách sản phẩm được chọn
+  const [isSelectMode, setIsSelectMode] = useState(false); // Trạng thái chọn sản phẩm
 
   // Hàm lấy sản phẩm từ API
   const fetchProducts = async (page = 1) => {
@@ -20,7 +36,7 @@ const ShopSellerScreen = () => {
 
     setLoading(true);
     try {
-      const { products: newProducts, total } = await getProducts(page, 20, searchQuery);
+      const { products: newProducts } = await getProducts(page, 20, searchQuery);
 
       if (newProducts.length < 20) {
         setHasMore(false); // Nếu sản phẩm trả về ít hơn 20 thì không còn dữ liệu để tải nữa
@@ -56,9 +72,46 @@ const ShopSellerScreen = () => {
     }
   };
 
+  // Hàm thêm sản phẩm
+  const handleAddProduct = () => {
+    const newId = Math.random().toString(); // Tạo ID ngẫu nhiên
+    setProducts((prev) => [
+      ...prev,
+      { id: newId, name: newProduct.name, price: newProduct.price, image: newProduct.image },
+    ]);
+    setIsAdding(false);
+    setNewProduct({ name: '', price: '', image: '' });
+  };
+
+  // Hàm chọn/xóa sản phẩm
+  const toggleSelectProduct = (productId) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    );
+  };
+
+  // Hàm xóa sản phẩm
+  const handleDeleteProducts = () => {
+    setProducts((prev) => prev.filter((product) => !selectedProducts.includes(product.id)));
+    setSelectedProducts([]);
+    setIsSelectMode(false);
+  };
+
   // Render một sản phẩm trong danh sách
   const renderProduct = ({ item }) => {
-    return <ProductCard product={item} />;
+    const isSelected = selectedProducts.includes(item.id);
+    return (
+      <TouchableOpacity
+        onLongPress={() => setIsSelectMode(true)} // Chuyển sang chế độ chọn sản phẩm
+        onPress={() => (isSelectMode ? toggleSelectProduct(item.id) : null)} // Chọn sản phẩm
+        style={[
+          styles.productCard,
+          isSelected && styles.selectedCard, // Đổi màu nền nếu được chọn
+        ]}
+      >
+        <ProductCard product={item} />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -91,11 +144,45 @@ const ShopSellerScreen = () => {
 
           {/* Hai nút Thêm và Xóa sản phẩm */}
           <View style={styles.buttonContainer}>
-            <Button title="Thêm sản phẩm" onPress={() => console.log('Thêm sản phẩm')} />
-            <Button title="Xóa sản phẩm" onPress={() => console.log('Xóa sản phẩm')} />
+            <Button title="Thêm sản phẩm" onPress={() => setIsAdding(true)} />
+            {isSelectMode && <Button title="Hủy" onPress={() => setIsSelectMode(false)} />}
+            <Button
+              title="Xóa sản phẩm"
+              onPress={handleDeleteProducts}
+              disabled={selectedProducts.length === 0}
+            />
           </View>
         </>
       )}
+
+      {/* Modal thêm sản phẩm */}
+      <Modal visible={isAdding} animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text>Thêm sản phẩm mới</Text>
+          <RNTextInput
+            placeholder="Tên sản phẩm"
+            value={newProduct.name}
+            onChangeText={(text) => setNewProduct({ ...newProduct, name: text })}
+            style={styles.input}
+          />
+          <RNTextInput
+            placeholder="Giá sản phẩm"
+            value={newProduct.price}
+            onChangeText={(text) => setNewProduct({ ...newProduct, price: text })}
+            style={styles.input}
+            keyboardType="numeric"
+          />
+          {/* AvatarPicker */}
+          <AvatarPicker
+            avatar={newProduct.image} // Đường dẫn ảnh sản phẩm
+            setAvatar={(uri) => setNewProduct({ ...newProduct, image: uri })} // Cập nhật ảnh sản phẩm
+          />
+          <View style={styles.modalButtons}>
+            <Button title="Hủy" onPress={() => setIsAdding(false)} />
+            <Button title="Thêm" onPress={handleAddProduct} />
+          </View>
+        </View>
+      </Modal>
 
       {/* Thanh điều hướng dưới */}
       <NavigationBar role="seller" />
@@ -124,10 +211,42 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#fff',
   },
+  productCard: {
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+  },
+  selectedCard: {
+    backgroundColor: '#d9f7be', 
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    width: '80%',
+    backgroundColor: '#f9f9f9',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 20,
   },
 });
 
