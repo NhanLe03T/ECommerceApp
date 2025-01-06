@@ -1,5 +1,3 @@
-// File: screens/MainScreen.js - Màn hình hiển thị danh sách sản phẩm
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
