@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, Button, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, Button, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-const ProductDetailScreen = ({ route, navigation }) => {
+const ProductDetailScreen = ({ route }) => {
   // Nhận tham số từ màn hình ProductCard
   const { product, relatedProducts } = route.params;
   const [reviewsVisible, setReviewsVisible] = useState(5); // Hiển thị tối đa 5 bình luận
   const [newReview, setNewReview] = useState(''); // Bình luận mới
   const [rating, setRating] = useState(0); // Đánh giá sao
   const [commentReplies, setCommentReplies] = useState({}); // Lưu trữ phản hồi cho từng bình luận
+
+  const navigation = useNavigation(); // Hook điều hướng
 
   // Hàm tăng số bình luận hiển thị
   const showMoreReviews = () => {
@@ -30,6 +33,18 @@ const ProductDetailScreen = ({ route, navigation }) => {
       product.reviews[index].replies = updatedReplies;
       setCommentReplies({ ...commentReplies, [index]: '' }); // Reset ô nhập phản hồi
     }
+  };
+
+  // Hàm thêm vào giỏ hàng
+  const addToCart = () => {
+    // Hiển thị thông báo khi sản phẩm được thêm vào giỏ hàng
+    Alert.alert('Thông báo', 'Sản phẩm đã được thêm vào giỏ hàng'); 
+  };
+
+  // Hàm mua ngay
+  const buyNow = () => {
+    // Điều hướng đến trang thanh toán với sản phẩm hiện tại
+    navigation.navigate('Checkout', { product }); // Điều hướng đến trang thanh toán với sản phẩm
   };
 
   return (
@@ -116,6 +131,16 @@ const ProductDetailScreen = ({ route, navigation }) => {
         )}
         horizontal // Hiển thị theo chiều ngang
       />
+
+      {/* Navigation Bar dưới */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={addToCart} style={styles.navButton}>
+          <Text style={styles.navButtonText}>Thêm vào giỏ hàng</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={buyNow} style={styles.navButton}>
+          <Text style={styles.navButtonText}>Mua ngay</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -180,17 +205,35 @@ const styles = StyleSheet.create({
   },
   relatedTitle: {
     fontSize: 18, // Kích thước tiêu đề "Sản phẩm khác"
-    fontWeight: 'bold', // In đậm
-    marginTop: 20, // Khoảng cách phía trên
+    fontWeight: 'bold',
+    marginTop: 20, // Khoảng cách từ trên
   },
   relatedItem: {
-    margin: 10, // Khoảng cách giữa các sản phẩm liên quan
-    alignItems: 'center', // Căn giữa nội dung
+    marginRight: 15, // Khoảng cách giữa các sản phẩm liên quan
   },
   relatedImage: {
-    width: 100, // Chiều rộng hình sản phẩm liên quan
-    height: 100, // Chiều cao hình sản phẩm liên quan
-    borderRadius: 10, // Bo góc
+    width: 100,
+    height: 100,
+    borderRadius: 10, // Góc bo tròn
+  },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#ccc',
+  },
+  navButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    width: '48%',
+    alignItems: 'center',
+  },
+  navButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 

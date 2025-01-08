@@ -12,7 +12,8 @@ import ProfileScreen from './screens/ProfileScreen'; // Màn hình hồ sơ cá 
 import NotificationsScreen from './screens/NotificationsScreen'; // Màn hình thông báo
 import ShopSellerScreen from './screens/ShopSellerScreen'; // Màn hình cửa hàng người bán
 import ProductDetailScreen from './screens/ProductDetailScreen'; // Màn hình chi tiết sản phẩm
-
+import CartScreen from './screens/CartScreen'; // Màn hình giỏ hàng
+import CheckoutScreen from './screens/CheckoutScreen'; // Màn hình thanh toán
 // Khởi tạo Stack Navigator
 const Stack = createStackNavigator();
 
@@ -32,6 +33,8 @@ const AppNavigation = () => {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Shop" component={ShopSellerScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} /> 
+        <Stack.Screen name="Checkout" component={CheckoutScreen} /> 
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} 
           options={{ headerShown: true, title: 'Chi tiết sản phẩm' }} // Hiện header với tiêu đề tùy chỉnh
         />

@@ -1,4 +1,3 @@
-// ShopSellerScreen.js
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -14,7 +13,6 @@ import {
 } from 'react-native';
 import { getProducts } from '../utils/api'; // API lấy sản phẩm
 import ProductCard from '../components/ProductCard'; // Card sản phẩm
-import ShopForm from '../forms/ShopForm'; // Form nhập tên cửa hàng
 import NavigationBar from '../components/NavigationBar'; // Thanh điều hướng dưới
 import AvatarPicker from '../components/AvatarPicker'; // Component chọn hình ảnh
 
@@ -118,7 +116,15 @@ const ShopSellerScreen = () => {
     <View style={styles.container}>
       {/* Nếu chưa có tên cửa hàng, hiển thị form để nhập */}
       {!storeName ? (
-        <ShopForm onSubmit={(name) => setStoreName(name)} />
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            value={storeName}
+            onChangeText={setStoreName}
+            placeholder="Nhập tên cửa hàng"
+          />
+          <Button title="Lưu tên cửa hàng" onPress={() => storeName.trim() && fetchProducts(page)} />
+        </View>
       ) : (
         <>
           {/* Hiển thị tên cửa hàng */}
@@ -196,6 +202,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f7',
     paddingTop: 20,
   },
+  formContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   storeName: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -218,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   selectedCard: {
-    backgroundColor: '#d9f7be', 
+    backgroundColor: '#d9f7be',
   },
   buttonContainer: {
     flexDirection: 'row',

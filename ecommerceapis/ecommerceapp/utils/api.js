@@ -69,3 +69,45 @@ export const fetchUserProfile = async () => {
     throw error;
   }
 };
+
+export const getCartProducts = async (page = 1, limit = 20) => {
+  try {
+    const response = await fetch(`${API_URL}/cart?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Không thể lấy sản phẩm giỏ hàng');
+    }
+    
+    const data = await response.json();
+    return { products: data.products, total: data.total };
+  } catch (error) {
+    console.error(error);
+    return { products: [], total: 0 };
+  }
+};
+
+// Xóa sản phẩm khỏi giỏ hàng
+export const removeFromCart = async (productId) => {
+  try {
+    const response = await fetch(`${API_URL}/cart/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Xóa sản phẩm thất bại');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
