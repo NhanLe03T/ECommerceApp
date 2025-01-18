@@ -1,3 +1,4 @@
+// MainScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,15 +8,17 @@ import {
   StyleSheet,
   Picker,
   Text,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // Điều hướng giữa các màn hình
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Thư viện lưu trữ cục bộ
-import { getProducts } from '../utils/api'; // API lấy danh sách sản phẩm
-import ProductCard from '../components/ProductCard'; // Component hiển thị sản phẩm
-import NavigationBar from '../components/NavigationBar'; // Thanh điều hướng
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getProducts } from '../utils/api';
+import ProductCard from '../components/ProductCard';
+import NavigationBar from '../components/NavigationBar';
 
+// State quản lý
 const MainScreen = () => {
-  // State quản lý
   const [products, setProducts] = useState([]); // Danh sách sản phẩm
   const [searchQuery, setSearchQuery] = useState(''); // Từ khóa tìm kiếm
   const [page, setPage] = useState(1); // Trang hiện tại
@@ -23,17 +26,18 @@ const MainScreen = () => {
   const [hasMore, setHasMore] = useState(true); // Còn dữ liệu hay không
   const [role, setRole] = useState(null); // Vai trò người dùng
   const [filter, setFilter] = useState({ minPrice: '', maxPrice: '', store: '' }); // Bộ lọc
-  const [sortBy, setSortBy] = useState('name'); // Tiêu chí sắp xếp: "name" hoặc "price"
+  const [sortBy, setSortBy] = useState('name'); // Tiêu chí sắp xếp
+  const [comparisonList, setComparisonList] = useState([]); // Danh sách so sánh
+  const [showComparison, setShowComparison] = useState(false); // Hiển thị modal so sánh
 
-  const navigation = useNavigation(); // Điều hướng
+  const navigation = useNavigation();
 
-  // Lấy vai trò người dùng
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
         const userData = await AsyncStorage.getItem('userData');
         const parsedData = JSON.parse(userData);
-        setRole(parsedData?.role || 'user'); // Mặc định là "user"
+        setRole(parsedData?.role || 'user');
       } catch (error) {
         console.error('Lỗi khi lấy thông tin người dùng:', error);
       }
@@ -42,17 +46,16 @@ const MainScreen = () => {
     fetchUserRole();
   }, []);
 
-  // Hàm lấy sản phẩm từ API
   const fetchProducts = async (page = 1) => {
-    if (loading || !hasMore) return; // Dừng nếu đang tải hoặc hết dữ liệu
+    if (loading || !hasMore) return;
     setLoading(true);
 
     try {
-      const { products: newProducts } = await getProducts(page, 20, searchQuery, filter, sortBy); // API trả về danh sách sản phẩm
+      const { products: newProducts } = await getProducts(page, 20, searchQuery, filter, sortBy);
       if (newProducts.length < 20) {
-        setHasMore(false); // Nếu số sản phẩm ít hơn 20 thì không còn dữ liệu
+        setHasMore(false);
       }
-      setProducts((prevProducts) => [...prevProducts, ...newProducts]); // Thêm sản phẩm mới vào danh sách
+      setProducts((prevProducts) => [...prevProducts, ...newProducts]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -60,52 +63,61 @@ const MainScreen = () => {
     }
   };
 
-  // Tải dữ liệu mỗi khi thay đổi các điều kiện
   useEffect(() => {
-    setProducts([]); // Reset danh sách sản phẩm
-    setPage(1); // Reset về trang đầu
-    setHasMore(true); // Bật tải dữ liệu
-    fetchProducts(1); // Gọi API lấy dữ liệu
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    fetchProducts(1);
   }, [searchQuery, filter, sortBy]);
 
-  // Hàm tìm kiếm
   const handleSearch = (text) => {
-    setSearchQuery(text); // Cập nhật từ khóa tìm kiếm
+    setSearchQuery(text);
   };
 
-  // Hàm tải thêm dữ liệu
   const loadMore = () => {
     if (!loading && hasMore) {
-      setPage(page + 1); // Tăng trang
+      setPage(page + 1);
     }
   };
 
-  // Hàm cập nhật bộ lọc
   const handleFilterChange = (key, value) => {
-    setFilter((prev) => ({ ...prev, [key]: value })); // Cập nhật bộ lọc
+    setFilter((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Hàm chọn sắp xếp
   const handleSortChange = (value) => {
-    setSortBy(value); // Cập nhật tiêu chí sắp xếp
+    setSortBy(value);
   };
 
-  // Hàm hiển thị sản phẩm
+  // Thêm sản phẩm vào danh sách so sánh
+  const handleAddToCompare = (product) => {
+    setComparisonList((prev) => {
+      if (prev.some((item) => item.id === product.id)) return prev; // Nếu đã có thì không thêm
+      return [...prev, product];
+    });
+  };
+
+  // Xóa sản phẩm khỏi danh sách so sánh
+  const handleRemoveFromCompare = (productId) => {
+    setComparisonList((prev) => prev.filter((item) => item.id !== productId));
+  };
+
   const renderProduct = ({ item }) => (
-    <ProductCard product={item} onPress={() => navigation.navigate('ProductDetail', { product: item })} />
+    <ProductCard
+      product={item}
+      onPress={() => navigation.navigate('ProductDetail', { product: item })}
+      onCompare={handleAddToCompare} // Thêm callback xử lý so sánh
+    />
   );
 
   return (
     <View style={styles.container}>
-      {/* Thanh tìm kiếm */}
       <TextInput
         value={searchQuery}
-        onChangeText={handleSearch} // Xử lý tìm kiếm
+        onChangeText={handleSearch}
         placeholder="Tìm sản phẩm..."
         style={styles.searchInput}
       />
 
-      {/* Bộ lọc sản phẩm */}
       <View style={styles.filterContainer}>
         <TextInput
           placeholder="Giá thấp nhất"
@@ -129,7 +141,6 @@ const MainScreen = () => {
         />
       </View>
 
-      {/* Sắp xếp sản phẩm */}
       <View style={styles.sortContainer}>
         <Text>Sắp xếp theo:</Text>
         <Picker selectedValue={sortBy} onValueChange={handleSortChange} style={styles.sortPicker}>
@@ -138,61 +149,63 @@ const MainScreen = () => {
         </Picker>
       </View>
 
-      {/* Danh sách sản phẩm */}
       <FlatList
         data={products}
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()} // đảm bảo mỗi sản phẩm có key duy nhất
-        onEndReached={loadMore} // gọi hàm loadmore
-        onEndReachedThreshold={0.5} // kích hoạt khi cuộn đến 50% danh sách
-        ListFooterComponent={loading && <ActivityIndicator size="large" color="#0000ff" />} // hiển thị loading khi tải
+        keyExtractor={(item) => item.id.toString()}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loading && <ActivityIndicator size="large" color="#0000ff" />}
       />
 
-      {/* Thanh điều hướng */}
+      {/* Hiển thị danh sách so sánh */}
+      <TouchableOpacity onPress={() => setShowComparison(true)}>
+        <Text style={styles.compareButton}>Xem so sánh ({comparisonList.length})</Text>
+      </TouchableOpacity>
+
+      {showComparison && (
+        <Modal visible={showComparison} animationType="slide">
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>So sánh sản phẩm</Text>
+            <FlatList
+              data={comparisonList}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.compareItem}>
+                  <Text>{item.name}</Text>
+                  <Text>{item.price} VNĐ</Text>
+                  <Text>⭐ {item.rating}/5</Text>
+                  <TouchableOpacity onPress={() => handleRemoveFromCompare(item.id)}>
+                    <Text style={styles.removeButton}>Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            <TouchableOpacity onPress={() => setShowComparison(false)}>
+              <Text style={styles.closeButton}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
+
       <NavigationBar role={role} />
     </View>
   );
 };
 
-// Style của màn hình
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 20,
-  },
-  searchInput: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    margin: 10,
-    paddingLeft: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
-  },
-  filterInput: {
-    width: '30%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  sortContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 10,
-  },
-  sortPicker: {
-    flex: 1,
-    marginLeft: 10,
-  },
+  container: { flex: 1, backgroundColor: '#f7f7f7', paddingTop: 20 },
+  searchInput: { height: 40, borderColor: '#ccc', borderWidth: 1, margin: 10, paddingLeft: 10, borderRadius: 5, backgroundColor: '#fff' },
+  filterContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
+  filterInput: { width: '30%', borderColor: '#ccc', borderWidth: 1, paddingHorizontal: 8, borderRadius: 5, backgroundColor: '#fff' },
+  sortContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, paddingHorizontal: 10 },
+  sortPicker: { flex: 1, marginLeft: 10 },
+  compareButton: { backgroundColor: '#4CAF50', padding: 10, borderRadius: 5, textAlign: 'center', color: '#fff', marginTop: 10 },
+  modalContainer: { flex: 1, padding: 20, backgroundColor: '#f7f7f7' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  compareItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  removeButton: { color: '#e60000' },
+  closeButton: { backgroundColor: '#333', color: '#fff', textAlign: 'center', padding: 10, borderRadius: 5, marginTop: 20 },
 });
 
 export default MainScreen;

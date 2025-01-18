@@ -1,58 +1,31 @@
-// ProductCard.js - Component hiển thị sản phẩm
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
-const ProductCard = ({ product, onPress }) => {
+const ProductCard = ({ product, onPress, onCompare }) => {
   return (
-    // Thẻ sản phẩm có thể nhấn
     <TouchableOpacity onPress={() => onPress(product)} style={styles.card}>
-      {/* Hình ảnh sản phẩm */}
       <Image source={{ uri: product.image }} style={styles.image} />
       <View style={styles.info}>
-        {/* Tên sản phẩm */}
         <Text style={styles.productName}>{product.name}</Text>
-        {/* Giá sản phẩm */}
         <Text style={styles.productPrice}>{product.price} VNĐ</Text>
-        {/* Số sao đánh giá */}
         <Text style={styles.productRating}>⭐ {product.rating || 0}/5</Text>
       </View>
+      <TouchableOpacity onPress={() => onCompare(product)} style={styles.compareButton}>
+        <Text style={styles.compareButtonText}>So sánh</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
 
-// Style cho thẻ sản phẩm
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff', // Màu nền thẻ
-    borderRadius: 10, // Bo góc
-    margin: 10, // Khoảng cách giữa các thẻ
-    padding: 10, // Khoảng cách bên trong
-    elevation: 3, // Bóng đổ
-  },
-  image: {
-    width: '100%', // Chiều rộng full
-    height: 200, // Chiều cao hình
-    borderRadius: 10, // Bo góc cho hình
-  },
-  info: {
-    paddingTop: 10, // Khoảng cách phía trên thông tin
-  },
-  productName: {
-    fontSize: 18, // Kích thước font tên sản phẩm
-    fontWeight: 'bold', // In đậm tên sản phẩm
-    color: '#333', // Màu chữ
-  },
-  productPrice: {
-    fontSize: 16, // Kích thước font giá
-    fontWeight: 'bold', // In đậm giá
-    color: '#e60000', // Màu đỏ cho giá
-    marginTop: 5, // Khoảng cách phía trên giá
-  },
-  productRating: {
-    fontSize: 14, // Kích thước font đánh giá
-    color: '#666', // Màu chữ xám
-    marginTop: 5, // Khoảng cách phía trên đánh giá
-  },
+  card: { backgroundColor: '#fff', borderRadius: 10, margin: 10, padding: 10, elevation: 3 },
+  image: { width: '100%', height: 200, borderRadius: 10 },
+  info: { paddingTop: 10 },
+  productName: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  productPrice: { fontSize: 16, fontWeight: 'bold', color: '#e60000', marginTop: 5 },
+  productRating: { fontSize: 14, color: '#666', marginTop: 5 },
+  compareButton: { backgroundColor: '#4CAF50', padding: 8, borderRadius: 5, marginTop: 10 },
+  compareButtonText: { color: '#fff', textAlign: 'center' },
 });
 
 export default ProductCard;
