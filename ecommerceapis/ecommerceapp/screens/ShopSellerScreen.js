@@ -27,6 +27,8 @@ const ShopSellerScreen = () => {
   const [newProduct, setNewProduct] = useState({ name: '', price: '', image: '' }); // Thông tin sản phẩm mới
   const [selectedProducts, setSelectedProducts] = useState([]); // Danh sách sản phẩm được chọn
   const [isSelectMode, setIsSelectMode] = useState(false); // Trạng thái chọn sản phẩm
+  const [isStatsVisible, setIsStatsVisible] = useState(false); // Hiển thị thống kê
+  const [statistics, setStatistics] = useState(null); // Dữ liệu thống kê
 
   // Hàm lấy sản phẩm từ API
   const fetchProducts = async (page = 1) => {
@@ -45,6 +47,16 @@ const ShopSellerScreen = () => {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Hàm lấy thống kê doanh thu
+  const fetchStatistics = async () => {
+    try {
+      const data = await getStatistics(); // API trả về thống kê theo tháng, quý, năm
+      setStatistics(data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -148,7 +160,7 @@ const ShopSellerScreen = () => {
             ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null} // Hiển thị loading indicator khi đang tải thêm
           />
 
-          {/* Hai nút Thêm và Xóa sản phẩm */}
+          {/* Nút thêm/xóa sản phẩm và thống kê */}
           <View style={styles.buttonContainer}>
             <Button title="Thêm sản phẩm" onPress={() => setIsAdding(true)} />
             {isSelectMode && <Button title="Hủy" onPress={() => setIsSelectMode(false)} />}
@@ -157,7 +169,31 @@ const ShopSellerScreen = () => {
               onPress={handleDeleteProducts}
               disabled={selectedProducts.length === 0}
             />
+            <Button
+              title="Xem thống kê"
+              onPress={() => {
+                setIsStatsVisible(true);
+                fetchStatistics();
+              }}
+            />
           </View>
+
+          {/* Hiển thị thống kê */}
+          <Modal visible={isStatsVisible} animationType="slide">
+            <View style={styles.modalContainer}>
+              <Text style={styles.statsTitle}>Thống kê doanh thu</Text>
+              {statistics ? (
+                <>
+                  <Text>Tháng: {statistics.monthly} VND</Text>
+                  <Text>Quý: {statistics.quarterly} VND</Text>
+                  <Text>Năm: {statistics.annual} VND</Text>
+                </>
+              ) : (
+                <ActivityIndicator size="large" color="#0000ff" />
+              )}
+              <Button title="Đóng" onPress={() => setIsStatsVisible(false)} />
+            </View>
+          </Modal>
         </>
       )}
 
@@ -260,6 +296,19 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 20,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  statsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
 });
+  
 
 export default ShopSellerScreen;
