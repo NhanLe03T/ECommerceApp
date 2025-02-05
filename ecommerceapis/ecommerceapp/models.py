@@ -1,10 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from ckeditor.fields import RichTextField
-from django.core.exceptions import ValidationError
+# from django.core.exceptions import ValidationError
 from enum import Enum
 from cloudinary.models import CloudinaryField
-from django.utils import timezone
+
+
+# from django.utils import timezone
 
 
 class Role(models.Model):
@@ -15,7 +17,7 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
-    role = models.ForeignKey(Role, on_delete=models.PROTECT, default=None, null=True)
+    role = models.ForeignKey(Role, on_delete=models.PROTECT, default=2, null=True)
     avatar = CloudinaryField(
         default="https://res.cloudinary.com/dthrh2pgj/image/upload/v1728619680/fc047347b17f7df7ff288d78c8c281cf_wncxc8.png")
 
@@ -36,17 +38,69 @@ class Category(BaseModel):
         return self.name
 
 
-class Product(BaseModel):
-    name = models.CharField(max_length=255)
-    description = RichTextField(blank=True, default='')
-    origin = models.CharField(max_length=50, null=True, blank=True, default="Origin Unknown")
-    brand = models.CharField(max_length=50, null=True, blank=True, default="No Brand")
-    weight = models.CharField(max_length=50, null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.PROTECT)
-    shop = models.ForeignKey('Shop', on_delete=models.CASCADE)
+class ChildCate(BaseModel):
+    name = models.CharField(max_length=100)
+    superCate = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='parent')
 
     def __str__(self):
         return self.name
+
+
+# class ChildCateLv2(BaseModel):
+#     name = models.CharField(max_length=100)
+#     superCate = models.ForeignKey(ChildCateLv1, on_delete=models.CASCADE, related_name='childcatelv2')
+#
+#     def __str__(self):
+#         return self.name
+
+
+class LabelDetails(BaseModel):
+    name = models.CharField(max_length=200)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='cate_lb_details')
+    childCate = models.ForeignKey(ChildCate, on_delete=models.PROTECT, null=True, related_name='childcate_lb_details')
+
+    # childCateLv2 = models.ForeignKey(ChildCateLv2, on_delete=models.PROTECT, null=True)
+    def __str__(self):
+        return self.name
+
+
+class ProductLabelDetails(BaseModel):
+    content = models.CharField(max_length=255)
+    labelDetails = models.ForeignKey(LabelDetails, on_delete=models.CASCADE, related_name='details_value')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='product_details')
+
+
+class Product(BaseModel):
+    name = models.CharField(max_length=255)
+    description = RichTextField(blank=True, default='')
+
+    category = models.ForeignKey(Category, on_delete=models.PROTECT)
+    childCate = models.ForeignKey(ChildCate, on_delete=models.PROTECT, null=True)
+    # childCateLv2 = models.ForeignKey(ChildCateLv2, on_delete=models.PROTECT, null=True)
+
+    shop = models.ForeignKey('Shop', on_delete=models.CASCADE)
+
+    labelDetails = models.ManyToManyField(LabelDetails, through=ProductLabelDetails)
+
+    def __str__(self):
+        return self.name
+
+
+class ProductGroup(BaseModel):
+    name = models.CharField(max_length=50)
+    is_main = models.BooleanField(default=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_groups')
+
+    def __str__(self):
+        return self.name
+
+
+class GroupAttribute(BaseModel):
+    value = models.CharField(max_length=50)
+    product_group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='group_attributes')
+
+    def __str__(self):
+        return self.value
 
 
 class ProductImage(BaseModel):
@@ -54,42 +108,13 @@ class ProductImage(BaseModel):
     image = CloudinaryField()
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    # Note: thêm ràng buộc từ 3 đến 9 ảnh (nếu dư thời gian thì làm)
-
-
-class Group(models.Model):
-    name = models.CharField(max_length=30)
-
-    def __str__(self):
-        return self.name
-
-
-class Attribute(models.Model):
-    value = models.CharField(max_length=30)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.value
-
 
 class SaleInfo(BaseModel):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.IntegerField()
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    primary_attr = models.ForeignKey(Attribute, on_delete=models.RESTRICT, null=True, blank=True, default=None,
-                                     related_name='pri_attr')
-    secondary_attr = models.ForeignKey(Attribute, on_delete=models.RESTRICT, null=True, blank=True, default=None,
-                                       related_name='sec_attr')
-
-    # đảm bảo rằng primary_attr và secondary_attr không thuộc cùng một group
-    def clean(self):
-        if self.primary_attr and self.secondary_attr:
-            if self.primary_attr.group == self.secondary_attr.group:
-                raise ValidationError("Primary and secondary attributes must not belong to the same group.")
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_sales_info')
+    st_attribute = models.ForeignKey(GroupAttribute, on_delete=models.PROTECT, null=True, related_name='st_attribute')
+    nd_attribute = models.ForeignKey(GroupAttribute, on_delete=models.PROTECT, null=True, related_name='nd_attribute')
 
 
 class AddressType(Enum):
@@ -97,10 +122,30 @@ class AddressType(Enum):
     OFFICE = 'office'
 
 
+class ProvinceCity(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class District(models.Model):
+    name = models.CharField(max_length=100)
+    locatedIn = models.ForeignKey(ProvinceCity, on_delete=models.PROTECT, related_name='districts')
+
+    def __str__(self):
+        return self.name
+
+
+class WardCommune(models.Model):
+    name = models.CharField(max_length=100)
+    locatedIn = models.ForeignKey(District, on_delete=models.PROTECT, related_name='wards_communes')
+
+    def __str__(self):
+        return self.name
+
+
 class Address(BaseModel):
-    province_city = models.CharField(max_length=100)
-    district = models.CharField(max_length=100)
-    ward_commune = models.CharField(max_length=100)
     address_details = models.CharField(max_length=100)
     fullname = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
@@ -114,8 +159,14 @@ class Address(BaseModel):
         choices=TYPE_CHOICES,
         default=AddressType.HOME.value,
     )
-    shop = models.ForeignKey('Shop', on_delete=models.CASCADE, null=True, default=None, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None)
+
+    province_city = models.ForeignKey(ProvinceCity, on_delete=models.CASCADE)
+    district = models.ForeignKey(District, on_delete=models.CASCADE)
+    ward_commune = models.ForeignKey(WardCommune, on_delete=models.CASCADE)
+
+    shop = models.OneToOneField('Shop', on_delete=models.CASCADE, null=True, default=None, unique=True,
+                                related_name='shop_address')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None, related_name='user_addresses_set')
 
     def __str__(self):
         return f"{self.address_details}, {self.ward_commune}, {self.district}, {self.province_city} "
@@ -144,7 +195,7 @@ class Shop(BaseModel):
         default=BusinessType.INDIVIDUAL.value,
     )
     user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='user')
-    staff = models.ForeignKey(User, on_delete=models.PROTECT, related_name='staff')
+    staff = models.ForeignKey(User, on_delete=models.PROTECT, related_name='staff', null=True)
 
     def __str__(self):
         return self.name
@@ -159,14 +210,18 @@ class Review(BaseModel):
 
 class ReviewImage(models.Model):
     image = CloudinaryField()
-    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='review_images')
 
 
 class Comment(BaseModel):
     content = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, null=True, default=None)
-    reply_to_comment = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, default=None)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_comment')
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, null=True, default=None, related_name='comment_review')
+    reply_to_comment = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, default=None,
+                                         related_name='reply_comment')
+
+    def __str__(self):
+        return self.content
 
 
 class OrderStatus(Enum):
@@ -187,6 +242,7 @@ class OrderStatus(Enum):
 class Order(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    itemSalesInfo = models.ManyToManyField(SaleInfo, through='OrderItem')
     STATUS_CHOICES = [
         (OrderStatus.PENDING.value, 'Pending'),
         (OrderStatus.CONFIRMED.value, 'Confirmed'),
@@ -209,26 +265,14 @@ class Order(BaseModel):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, default=None)
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, default=None,
+                              related_name='order_order_item')
     sale_info = models.ForeignKey(SaleInfo, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     name = models.CharField(max_length=255, blank=True, default=None)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None)
     image = models.CharField(max_length=255, blank=True, default=None)
-
-    # Ghi đè phương thức save để lấy các giá trị
-    def save(self, *args, **kwargs):
-        if self.sale_info:
-            if not self.name:
-                self.name = self.sale_info.product.name
-            if not self.unit_price:
-                self.unit_price = self.sale_info.price
-            if not self.image:
-                product = self.sale_info.product
-                cover_image = ProductImage.objects.filter(product=product, is_cover=True).first()
-                if cover_image:
-                    self.image = cover_image.image.url
-        super().save(*args, **kwargs)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
 
 class PaymentMethod(Enum):
@@ -272,9 +316,9 @@ class Payment(BaseModel):
         default=PaymentMethod.CASH.value,
     )
 
-    def save(self, *args, **kwargs):
-        if self.payment_status == PaymentStatus.COMPLETED.value and not self.paid_at:
-            self.paid_at = timezone.now()
-        if not self.total_amount and self.order:
-            self.total_amount = self.order.total_amount
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.payment_status == PaymentStatus.COMPLETED.value and not self.paid_at:
+    #         self.paid_at = timezone.now()
+    #     if not self.total_amount and self.order:
+    #         self.total_amount = self.order.total_amount
+    #     super().save(*args, **kwargs)

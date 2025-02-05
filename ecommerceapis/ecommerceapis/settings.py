@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'rest_framework',
     'debug_toolbar',
+    'drf_yasg',
+    'oauth2_provider',
 ]
 
 MIDDLEWARE = [
@@ -147,3 +149,15 @@ cloudinary.config(
     api_secret="Vmir87LIW9URwb7k3_rvs78o8OM",
     secure=True
 )
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
+}
+
+# Xử lý JSON khi đưa lên server
+OAUTH2_PROVIDER = {'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'}
+
+CLIENT_ID = 'RZx6HpcXAcxIT4C2oENO5VJIIulcszHELEObi6jP'
+CLIENT_SECRET = 'SXmapNVrrDSNr8qVoyL85ddu9PEaSP0z9tfhsJFCjYvWqqgJmu9uo6pYHXZN5o7akBnkMi5Dv1eqPxXw8hnufU9gL5T5hJULgNjJNshmqTmfLtJmNmdq02kb0oRPN8W6'

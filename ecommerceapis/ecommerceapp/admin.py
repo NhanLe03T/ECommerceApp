@@ -1,9 +1,8 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.template.response import TemplateResponse
-from ecommerceapp.models import (Category, Product, ProductImage, User, Group,
-                                 Attribute, SaleInfo, Address, Shop, Review,
-                                 ReviewImage, Comment, Order, OrderItem, Payment)
+from ecommerceapp.models import (Category, Product, ProductImage, User, SaleInfo, Address, Shop, Review,
+                                 ReviewImage, Comment, Order, OrderItem, Payment, ProvinceCity, District, WardCommune)
 from django.utils.html import mark_safe
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
@@ -83,10 +82,6 @@ class UserAdmin(admin.ModelAdmin):
         )
 
 
-class AttributeAdmin(admin.ModelAdmin):
-    list_display = ['group', 'value']
-
-
 class AddressAdmin(admin.ModelAdmin):
     list_display = ['fullname', 'phone', 'province_city', 'district', 'ward_commune', 'address_details', 'type',
                     'is_default', 'user', 'shop']
@@ -150,13 +145,31 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = ['payment_status', 'payment_method']
 
 
+class ProvinceCityAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+    search_fields = ['name']
+
+
+class DistrictAdmin(admin.ModelAdmin):
+    list_display = ['name', 'locatedIn']
+    list_filter = ['locatedIn']
+    search_fields = ['name', 'locatedIn__name']
+
+
+class WardCommuneAdmin(admin.ModelAdmin):
+    list_display = ['name', 'locatedIn']
+    list_filter = ['locatedIn']
+    search_fields = ['name', 'locatedIn__name']
+
+
 admin_site = MyEcommerceAdmin(name='eCommerce')
 
+admin_site.register(ProvinceCity, ProvinceCityAdmin)
+admin_site.register(District, DistrictAdmin)
+admin_site.register(WardCommune, WardCommuneAdmin)
 admin_site.register(Category, CategoryAdmin)
 admin_site.register(Product, ProductAdmin)
 admin_site.register(User, UserAdmin)
-admin_site.register(Group)
-admin_site.register(Attribute, AttributeAdmin)
 admin_site.register(Address, AddressAdmin)
 admin_site.register(Shop, ShopAdmin)
 admin_site.register(Review, ReviewAdmin)
